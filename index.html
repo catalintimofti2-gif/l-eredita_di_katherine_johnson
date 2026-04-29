@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Katherine Johnson | Tributo Ufficiale</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --space-dark: #05070a;
+            --star-gold: #f9d71c;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--space-dark);
+            color: #e2e8f0;
+            margin: 0;
+            overflow: hidden;
+        }
+        h1, h2, h3, .nav-logo {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+        
+        #starfield {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: radial-gradient(circle at center, #0a192f 0%, #05070a 100%);
+        }
+
+        /* Gestione Pagine SPA */
+        .page {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            transform: translateY(20px);
+            padding-top: 100px;
+            overflow-y: auto;
+        }
+
+        .page.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1rem;
+        }
+
+        .nav-link {
+            position: relative;
+            transition: color 0.3s ease;
+        }
+
+        .nav-link.active {
+            color: var(--star-gold);
+            font-weight: 600;
+        }
+        .nav-link.active::after {
+            width: 100%;
+        }
+
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -4px;
+            left: 0;
+            background-color: var(--star-gold);
+            transition: width 0.3s ease;
+        }
+
+        /* Stili Timeline Dinamica */
+        .timeline-container {
+            position: relative;
+            padding: 2rem 0;
+        }
+        .timeline-line {
+            position: absolute;
+            left: 50%;
+            width: 2px;
+            height: 100%;
+            background: rgba(249, 215, 28, 0.2);
+            transform: translateX(-50%);
+        }
+        .timeline-item {
+            position: relative;
+            width: 100%;
+            margin-bottom: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        .timeline-dot {
+            position: absolute;
+            left: 50%;
+            top: 20px;
+            width: 14px;
+            height: 14px;
+            background: var(--star-gold);
+            border-radius: 50%;
+            transform: translateX(-50%);
+            box-shadow: 0 0 10px var(--star-gold);
+            z-index: 10;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .timeline-content {
+            width: 45%;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            opacity: 0.7;
+            transform: scale(0.98);
+        }
+
+        /* Effetto rivelazione testo al tocco/hover */
+        .timeline-item:hover .timeline-content,
+        .timeline-item:active .timeline-content {
+            opacity: 1;
+            transform: scale(1);
+            background: rgba(249, 215, 28, 0.1);
+            border-color: var(--star-gold);
+        }
+
+        .timeline-item:hover .timeline-dot {
+            transform: translateX(-50%) scale(1.5);
+            box-shadow: 0 0 20px var(--star-gold);
+        }
+
+        .timeline-text {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s ease;
+            opacity: 0;
+        }
+
+        .timeline-item:hover .timeline-text,
+        .timeline-item:active .timeline-text {
+            max-height: 1000px;
+            opacity: 1;
+            margin-top: 1rem;
+        }
+
+        /* Responsive timeline */
+        @media (max-width: 768px) {
+            .timeline-line { left: 20px; }
+            .timeline-dot { left: 20px; }
+            .timeline-content { width: 85%; margin-left: 45px !important; text-align: left !important; opacity: 1; transform: scale(1); }
+            .timeline-item { justify-content: flex-start; }
+            .timeline-text { max-height: 1000px; opacity: 1; margin-top: 0.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <canvas id="starfield"></canvas>
+
+    <!-- Navigazione -->
+    <nav class="fixed w-full z-50 bg-[#05070a]/90 border-b border-white/10 backdrop-blur-md">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="javascript:void(0)" onclick="showPage('home')" class="nav-logo text-xl font-bold tracking-tighter text-white uppercase">KATHERINE <span class="text-yellow-400">JOHNSON</span></a>
+            <div class="hidden md:flex space-x-8 text-sm font-medium uppercase tracking-widest">
+                <a href="javascript:void(0)" onclick="showPage('home')" class="nav-link active" data-page="home">Home</a>
+                <a href="javascript:void(0)" onclick="showPage('bio')" class="nav-link" data-page="bio">Bio</a>
+                <a href="javascript:void(0)" onclick="showPage('risultati')" class="nav-link" data-page="risultati">Risultati</a>
+                <a href="javascript:void(0)" onclick="showPage('citazioni')" class="nav-link" data-page="citazioni">Citazioni</a>
+                <a href="javascript:void(0)" onclick="showPage('crediti')" class="nav-link" data-page="crediti">Crediti</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Pagina: Home -->
+    <main id="home" class="page active items-center">
+        <div class="max-w-6xl mx-auto px-6 grid md:grid-cols-2 gap-12 items-center">
+            <div class="space-y-6">
+                <h1 class="text-5xl md:text-7xl font-extrabold leading-tight">
+                    Oltre i <span class="text-yellow-400">Calcoli</span>,<br> verso le Stelle.
+                </h1>
+                <p class="text-lg md:text-xl text-gray-300 font-light leading-relaxed">
+                    Matematica, fisica e scienziata spaziale. Katherine Johnson è stata la mente dietro le traiettorie che hanno portato l'umanità sulla Luna.
+                </p>
+                <button onclick="showPage('bio')" class="bg-yellow-400 text-black px-8 py-3 rounded-full font-bold hover:bg-yellow-300 transition shadow-lg shadow-yellow-400/20 uppercase text-sm tracking-widest">
+                    Inizia l'esplorazione
+                </button>
+            </div>
+            <div class="hidden md:block">
+                <img src="https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?auto=format&fit=crop&w=800&q=80" alt="[Immagine della Terra dallo spazio]" class="rounded-3xl border border-white/10 shadow-2xl grayscale hover:grayscale-0 transition duration-1000">
+            </div>
+        </div>
+    </main>
+
+    <!-- Pagina: Biografia -->
+    <section id="bio" class="page">
+        <div class="max-w-4xl mx-auto px-6 mt-[70px] pb-24">
+            <h2 class="text-4xl font-bold mb-16 text-center text-yellow-400 uppercase tracking-widest">Biografia</h2>
+            
+            <!-- Introduzione -->
+            <div class="card p-8 md:p-12 mb-20 shadow-2xl">
+                <h3 class="text-2xl font-bold mb-6 text-white border-b border-yellow-400/20 pb-2">Una vita tra i numeri</h3>
+                <p class="text-gray-300 leading-relaxed text-lg font-light">
+                    Katherine Johnson è stata una pioniera che ha abbattuto barriere razziali e di genere, trasformando la sua innata passione per la matematica in un contributo fondamentale per l'esplorazione spaziale. Nata in un'epoca di grandi sfide, la sua curiosità instancabile l'ha portata dalle aule scolastiche del West Virginia fino ai laboratori della NASA, dove i suoi calcoli millimetrici hanno garantito la sicurezza degli astronauti e il successo di missioni storiche.
+                </p>
+            </div>
+
+            <div class="text-center mb-12">
+                <h3 class="text-xl text-gray-400 uppercase tracking-[0.3em] mb-2">I Grandi Traguardi</h3>
+                <p class="text-[10px] text-gray-500 italic uppercase tracking-wider">Passa il cursore o tocca i punti per leggere i dettagli</p>
+            </div>
+
+            <!-- Timeline Interattiva -->
+            <div class="timeline-container">
+                <div class="timeline-line"></div>
+                
+                <!-- Infanzia -->
+                <div class="timeline-item">
+                    <div class="timeline-content card p-6 text-right">
+                        <span class="text-yellow-400 text-sm font-bold tracking-widest uppercase">Infanzia prodigiosa</span>
+                        <h4 class="text-lg font-bold text-white mt-1">L'inizio di un talento</h4>
+                        <div class="timeline-text text-gray-400 text-sm">
+                            Fin dall'infanzia dimostrò di avere talento per la matematica: ottenne il diploma superiore all'età di 14 anni e a 16 anni iniziò a frequentare il West Virginia State College. Nel 1937 si laureò in matematica e francese con la valutazione Magna cum laude.
+                        </div>
+                    </div>
+                    <div class="timeline-dot"></div>
+                    <div class="hidden md:block w-[45%]"></div> 
+                </div>
+
+                <!-- NASA Entry -->
+                <div class="timeline-item">
+                    <div class="hidden md:block w-[45%]"></div>
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content card p-6">
+                        <span class="text-yellow-400 text-sm font-bold tracking-widest uppercase">Ingresso alla NASA</span>
+                        <h4 class="text-lg font-bold text-white mt-1">Un singolo suggerimento</h4>
+                        <div class="timeline-text text-gray-400 text-sm">
+                            Nel 1953, grazie a un suggerimento familiare durante un barbecue, entrò al Langley Research Center della NACA (poi NASA) come una delle prime donne afroamericane nel team di "computer umani": un gruppo di tecnici donne che eseguivano precisi calcoli matematici, inizialmente segregato.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- John Glenn -->
+                <div class="timeline-item">
+                    <div class="timeline-content card p-6 text-right">
+                        <span class="text-yellow-400 text-sm font-bold tracking-widest uppercase">La fiducia di John Glenn</span>
+                        <h4 class="text-lg font-bold text-white mt-1">Che nessun'altro le ha dato</h4>
+                        <div class="timeline-text text-gray-400 text-sm">
+                            Nel 1962, quando la NASA utilizzò per la prima volta i calcolatori elettronici per il calcolo del volo orbitale di John Glenn con la Mercury Friendship 7, l'astronauta chiese esplicitamente che fosse lei a confermare i dati. Lei lo fece in una notte, garantendo la sicurezza della missione.
+                        </div>
+                    </div>
+                    <div class="timeline-dot"></div>
+                    <div class="hidden md:block w-[45%]"></div>
+                </div>
+
+                <!-- Apollo -->
+                <div class="timeline-item">
+                    <div class="hidden md:block w-[45%]"></div>
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content card p-6">
+                        <span class="text-yellow-400 text-sm font-bold tracking-widest uppercase">Apollo 11 e 13</span>
+                        <h4 class="text-lg font-bold text-white mt-1">Verso la Luna</h4>
+                        <div class="timeline-text text-gray-400 text-sm">
+                            Calcolò la traiettoria per l'allunaggio dell'Apollo 11 nel 1969. Nel 1970, durante la crisi dell'Apollo 13, i suoi calcoli e i piani di emergenza furono vitali per riportare l'equipaggio sano e salvo sulla Terra.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ritiro e Futuro -->
+                <div class="timeline-item">
+                    <div class="timeline-content card p-6 text-right">
+                        <span class="text-yellow-400 text-sm font-bold tracking-widest uppercase">L'Eredità per il Domani</span>
+                        <h4 class="text-lg font-bold text-white mt-1">1986 - 2020</h4>
+                        <div class="timeline-text text-gray-400 text-sm">
+                            Dopo 33 anni alla NASA, si ritirò nel 1986. Trascorse i decenni successivi incoraggiando i giovani, specialmente donne e minoranze, a intraprendere carriere scientifiche e matematiche, diventando un'icona globale delle discipline STEM.
+                        </div>
+                    </div>
+                    <div class="timeline-dot"></div>
+                    <div class="hidden md:block w-[45%]"></div>
+                </div>
+
+                <!-- Morte -->
+                <div class="timeline-item">
+                    <div class="hidden md:block w-[45%]"></div>
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content card p-6">
+                        <span class="text-yellow-400 text-sm font-bold tracking-widest uppercase">Scomparsa</span>
+                        <h4 class="text-lg font-bold text-white mt-1">Un'eredità da ricordare</h4>
+                        <div class="timeline-text text-gray-400 text-sm">
+                            Si spense il 24 febbraio 2020 in una casa di riposo a Newport News all'età di 101 anni. <br> Dopo la sua morte, Jim Bridenstine, amministratore della NASA, la descrisse come "una eroina statunitense", affermando che "la sua eredità pionieristica non sarà mai dimenticata".
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pagina: Risultati -->
+    <section id="risultati" class="page items-center">
+        <div class="max-w-5xl mx-auto px-6 py-12">
+            <h2 class="text-4xl font-bold mb-10 text-center text-yellow-400 uppercase tracking-widest">Eredità</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="card p-8 text-center border-b-2 border-yellow-400/30">
+                    <h3 class="text-xl font-bold text-white mb-3">Leadership</h3>
+                    <p class="text-gray-400 text-sm">Ha guidato team di ricerca computazionale, aprendo la strada alle donne nelle STEM.</p>
+                </div>
+                <div class="card p-8 text-center border-b-2 border-yellow-400/30">
+                    <h3 class="text-xl font-bold text-white mb-3">Onori</h3>
+                    <p class="text-gray-400 text-sm">Medaglia Presidenziale della Libertà (2015) e numerosi premi della NASA.</p>
+                </div>
+                <div class="card p-8 text-center border-b-2 border-yellow-400/30">
+                    <h3 class="text-xl font-bold text-white mb-3">Ispirazione</h3>
+                    <p class="text-gray-400 text-sm">La sua vita è al centro del libro e del film "Il diritto di contare".</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pagina: Citazioni -->
+    <section id="citazioni" class="page items-center">
+        <div class="max-w-3xl mx-auto px-6 text-center py-12">
+            <h2 class="text-4xl font-bold mb-12 text-yellow-400 uppercase tracking-widest">Pensiero</h2>
+            <div class="card p-12 italic text-xl md:text-3xl font-medium leading-relaxed shadow-2xl">
+                "Mi piaceva imparare. Mi piaceva la matematica. Non ho mai avuto paura di chiedere 'perché'. Se volevi sapere qualcosa, dovevi chiederlo."
+            </div>
+            <p class="mt-8 text-yellow-400 font-bold uppercase tracking-widest">— Katherine Johnson</p>
+        </div>
+    </section>
+
+    <!-- Pagina: Crediti -->
+    <section id="crediti" class="page items-center">
+        <div class="max-w-3xl mx-auto px-6 text-center py-12">
+            <h2 class="text-4xl font-bold mb-8 text-yellow-400 uppercase tracking-widest">Crediti</h2>
+            <div class="card p-10 space-y-6">
+                <p class="text-gray-300 text-lg">Questa pagina è stata creata per onorare la memoria di Katherine Johnson.</p>
+                <div class="border-t border-white/10 pt-6">
+                    <p class="text-sm text-gray-400 uppercase tracking-widest mb-2">Sviluppo & Design</p>
+                    <p class="text-white font-bold text-xl">Tributo Digitale</p>
+                </div>
+                <div class="pt-4 text-sm text-gray-500">
+                    Immagini fornite da Unsplash • Font forniti da Google Fonts
+                </div>
+            </div>
+            <button onclick="showPage('home')" class="mt-8 text-sm text-gray-400 hover:text-white transition uppercase tracking-tighter">Torna alla Home</button>
+        </div>
+    </section>
+
+    <script>
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+            const activePage = document.getElementById(pageId);
+            activePage.classList.add('active');
+            
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+                if(link.getAttribute('data-page') === pageId) {
+                    link.classList.add('active');
+                }
+            });
+            
+            activePage.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        const canvas = document.getElementById('starfield');
+        const ctx = canvas.getContext('2d');
+        let stars = [];
+        const numStars = 200;
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            initStars();
+        }
+
+        function initStars() {
+            stars = [];
+            for (let i = 0; i < numStars; i++) {
+                stars.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    size: Math.random() * 1.5,
+                    speed: Math.random() * 0.1 + 0.05,
+                    opacity: Math.random()
+                });
+            }
+        }
+
+        function drawStars() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            stars.forEach(star => {
+                ctx.globalAlpha = star.opacity;
+                ctx.fillStyle = 'white';
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+                ctx.fill();
+                
+                star.y -= star.speed;
+                if (star.y < 0) star.y = canvas.height;
+            });
+            requestAnimationFrame(drawStars);
+        }
+
+        window.addEventListener('resize', resize);
+        resize();
+        drawStars();
+    </script>
+</body>
+</html>
