@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Katherine Johnson | Tributo Ufficiale</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inclusione di Three.js per la galassia a spirale 3D -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Space+Grotesk:wght@300;500;700&display=swap" rel="stylesheet">
+    
+    
+    <link rel="stylesheet" href="style.css">
+    
+    
+</head>
+<body>
+
+    <canvas id="starfield"></canvas>
+    <div id="galaxy-container"></div>
+
+    <!-- Navigazione -->
+    <nav class="fixed w-full z-50 bg-[#05070a]/90 border-b border-white/10 backdrop-blur-md">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="javascript:void(0)" onclick="showPage('home')" class="nav-logo text-xl font-bold tracking-tighter text-white uppercase">KATHERINE <span class="text-yellow-400">JOHNSON</span></a>
+            <div class="hidden md:flex space-x-8 text-sm font-medium uppercase tracking-widest">
+                <a href="javascript:void(0)" onclick="showPage('home')" class="nav-link active" data-page="home">Home</a>
+                <a href="javascript:void(0)" onclick="showPage('bio')" class="nav-link" data-page="bio">Biografia</a>
+                <a href="javascript:void(0)" onclick="showPage('risultati')" class="nav-link" data-page="risultati">L'impatto</a>
+                <a href="javascript:void(0)" onclick="showPage('citazioni')" class="nav-link" data-page="citazioni">Citazioni</a>
+                <a href="javascript:void(0)" onclick="showPage('crediti')" class="nav-link" data-page="crediti">Crediti</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Pagina: Home -->
+    <main id="home" class="page active items-center">
+        <div class="max-w-6xl mx-auto px-6 grid md:grid-cols-2 gap-12 items-center">
+            <div class="space-y-6">
+                <h1 class="text-5xl md:text-7xl font-extrabold leading-tight">
+                    Oltre i <span class="text-yellow-400">Calcoli</span>,<br> verso le Stelle.
+                </h1>
+                <p class="text-lg md:text-xl text-gray-300 font-light leading-relaxed">
+                    Matematica, fisica e scienziata spaziale. Katherine Johnson è stata la mente dietro le traiettorie che hanno portato l'umanità sulla Luna.
+                </p>
+                <button onclick="showPage('bio')" class="bg-yellow-400 text-black px-8 py-3 rounded-full font-bold hover:bg-yellow-300 transition shadow-lg shadow-yellow-400/20 uppercase text-sm tracking-widest">
+                    Inizia l'esplorazione
+                </button>
+            </div>
+            <div class="hidden md:block">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/6/62/Katherine_Johnson_at_NASA%2C_in_1966.jpg"" alt="[Katherine Johnson alla NASA nel 1966]" class="rounded-3xl border border-white/10 shadow-2xl grayscale hover:grayscale-0 transition duration-1000">
+            </div>
+        </div>
+    </main>
+
+    <!-- Pagina: Biografia -->
+    <section id="bio" class="page">
+        <div class="max-w-4xl mx-auto px-6 mt-[70px] pb-24">
+            <h2 class="text-4xl font-bold mb-16 text-center text-yellow-400 uppercase tracking-widest">Biografia</h2>
+            
+            <!-- Introduzione -->
+            <div class="card p-8 md:p-10 mb-20 border-l-4 border-yellow-400 shadow-xl">
+                <h3 class="text-xl font-bold text-white mb-4 uppercase tracking-tighter">Una vita tra i numeri</h3>
+                <p class="text-lg text-gray-300 leading-relaxed font-light">
+                    Katherine Johnson è stata una pioniera che ha abbattuto barriere razziali e di genere, trasformando la sua innata passione per la matematica in un contributo fondamentale per l'esplorazione spaziale. Nata in un'epoca di grandi sfide, la sua curiosità instancabile l'ha portata dalle aule scolastiche del West Virginia fino ai laboratori della NASA, dove i suoi calcoli millimetrici hanno garantito la sicurezza degli astronauti e il successo di missioni storiche.
+                </p>
+            </div>
+
+            <div class="text-center mb-12">
+                <h3 class="text-xl text-gray-400 uppercase tracking-[0.3em] mb-2">I Grandi Traguardi</h3>
+                <p class="text-[10px] text-gray-500 italic uppercase tracking-wider">Passa il cursore o tocca i punti per leggere i dettagli</p>
+            </div>
+
+            <!-- Timeline Interattiva -->
+            <div class="timeline-container">
+                <div class="timeline-line"></div>
+                
+                <!-- Infanzia -->
+                <div class="timeline-item">
+                    <div class="timeline-content card p-6 text-right">
+                        <span class="text-yellow-400 text-sm font-bold tracking-widest uppercase">Infanzia prodigiosa</span>
+                        <h4 class="text-lg font-bold text-white mt-1">L'inizio di un talento</h4>
+                        <div class="timeline-text text-gray-400 text-sm">
+                            Fin dall'infanzia dimostrò di avere talento per la matematica: ottenne il diploma superiore all'età di 14 anni e a 16 anni iniziò a frequentare il West Virginia State College. Nel 1937 si laureò in matematica e francese con la valutazione Magna cum laude.
+                        </div>
+                    </div>
+                    <div class="timeline-dot"></div>
+                    <div class="hidden md:block w-[45%]"></div> 
+                </div>
+
+                <!-- NASA Entry -->
+                <div class="timeline-item">
+                    <div class="hidden md:block w-[45%]"></div>
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content card p-6">
+                        <span class="text-yellow-400 text-sm font-bold tracking-widest uppercase">Ingresso alla NASA</span>
+                        <h4 class="text-lg font-bold text-white mt-1">Un singolo suggerimento</h4>
+                        <div class="timeline-text text-gray-400 text-sm">
+                            Nel 1953, grazie a un suggerimento familiare durante un barbecue, entrò al Langley Research Center della NACA (poi NASA) come una delle prime donne afroamericane nel team di "computer umani": un gruppo di tecnici donne che eseguivano precisi calcoli matematici, inizialmente segregato.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- John Glenn -->
+                <div class="timeline-item">
+                    <div class="timeline-content card p-6 text-right">
+                        <span class="text-yellow-400 text-sm font-bold tracking-widest uppercase">La fiducia di John Glenn</span>
+                        <h4 class="text-lg font-bold text-white mt-1">Che nessun'altro le ha dato</h4>
+                        <div class="timeline-text text-gray-400 text-sm">
+                            Nel 1962, quando la NASA utilizzò per la prima volta i calcolatori elettronici per il calcolo del volo orbitale di John Glenn con la Mercury Friendship 7, l'astronauta chiese esplicitamente che fosse lei a confermare i dati. Lei lo fece in una notte, garantendo la sicurezza della missione.
+                        </div>
+                    </div>
+                    <div class="timeline-dot"></div>
+                    <div class="hidden md:block w-[45%]"></div>
+                </div>
+
+                <!-- Apollo -->
+                <div class="timeline-item">
+                    <div class="hidden md:block w-[45%]"></div>
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content card p-6">
+                        <span class="text-yellow-400 text-sm font-bold tracking-widest uppercase">Apollo 11 e 13</span>
+                        <h4 class="text-lg font-bold text-white mt-1">Verso la Luna</h4>
+                        <div class="timeline-text text-gray-400 text-sm">
+                            Calcolò la traiettoria per l'allunaggio dell'Apollo 11 nel 1969. Nel 1970, durante la crisi dell'Apollo 13, i suoi calcoli e i piani di emergenza furono vitali per riportare l'equipaggio sano e salvo sulla Terra.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ritiro e Futuro -->
+                <div class="timeline-item">
+                    <div class="timeline-content card p-6 text-right">
+                        <span class="text-yellow-400 text-sm font-bold tracking-widest uppercase">L'Eredità per il Domani</span>
+                        <h4 class="text-lg font-bold text-white mt-1">1986 - 2020</h4>
+                        <div class="timeline-text text-gray-400 text-sm">
+                            Dopo 33 anni alla NASA, si ritirò nel 1986. Trascorse i decenni successivi incoraggiando i giovani, specialmente donne e minoranze, a intraprendere carriere scientifiche e matematiche, diventando un'icona globale delle discipline STEM.
+                        </div>
+                    </div>
+                    <div class="timeline-dot"></div>
+                    <div class="hidden md:block w-[45%]"></div>
+                </div>
+
+                <!-- Morte -->
+                <div class="timeline-item">
+                    <div class="hidden md:block w-[45%]"></div>
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content card p-6">
+                        <span class="text-yellow-400 text-sm font-bold tracking-widest uppercase">Scomparsa</span>
+                        <h4 class="text-lg font-bold text-white mt-1">Un'eredità da ricordare</h4>
+                        <div class="timeline-text text-gray-400 text-sm">
+                            Si spense il 24 febbraio 2020 in una casa di riposo a Newport News all'età di 101 anni. <br> Dopo la sua morte, Jim Bridenstine, amministratore della NASA, la descrisse come "una eroina statunitense", affermando che "la sua eredità pionieristica non sarà mai dimenticata".
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pagina: Risultati (L'impatto) -->
+    <section id="risultati" class="page">
+        <div class="max-w-5xl mx-auto px-6 py-12 pb-24">
+            <h2 class="text-4xl font-bold mb-10 text-center text-yellow-400 uppercase tracking-widest">L'Impatto di Katherine</h2>
+            
+            <div class="card p-8 md:p-10 mb-12 border-l-4 border-yellow-400 shadow-xl">
+                <h3 class="text-xl font-bold text-white mb-4 uppercase tracking-tighter">Un'eredità oltre le equazioni</h3>
+                <p class="text-lg text-gray-300 leading-relaxed font-light">
+                    L'impatto di Katherine Johnson ha trasceso il campo della matematica pura per diventare un simbolo di progresso sociale e scientifico. La sua precisione impeccabile non ha solo permesso all'uomo di camminare sulla Luna, ma ha abbattuto i muri della segregazione e del pregiudizio, dimostrando che il talento non conosce colore né genere. Il suo lavoro ha aperto la strada a generazioni di scienziati, ingegneri e matematici, rendendo lo spazio un luogo raggiungibile per tutti.
+                </p>
+            </div>
+
+            <div class="space-y-6">
+                <h3 class="text-2xl font-bold mb-8 text-white uppercase text-xs tracking-[0.3em] text-center">Tappe del riconoscimento</h3>
+                
+                <div class="grid grid-cols-1 gap-4">
+                    <div class="card p-6 border-l-2 border-yellow-400/50 hover:bg-white/10 transition">
+                        <div class="flex items-start">
+                            <span class="text-yellow-400 font-bold mr-4 text-xl">1979</span>
+                            <p class="text-gray-300 text-sm leading-relaxed">
+                                Prima del suo ritiro, la sua biografia riceve un posto d'onore nelle liste degli <strong>afroamericani distinti</strong> nel campo della scienza e della tecnologia.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- 2015 con Immagine Integrata a Destra - Ingrandita -->
+                    <div class="card p-6 border-l-2 border-yellow-400/50 hover:bg-white/10 transition">
+                        <div class="flex flex-col md:flex-row items-center gap-8">
+                            <div class="flex items-start grow">
+                                <span class="text-yellow-400 font-bold mr-4 text-xl shrink-0">2015</span>
+                                <p class="text-gray-300 text-sm leading-relaxed">
+                                    Il presidente Barack Obama la premia con la <strong>Medaglia presidenziale della libertà</strong> . <br> E' una decorazione conferita dal presidente degli Stati Uniti d'America ed è, la massima decorazione degli Stati Uniti.
+                                </p>
+                            </div>
+                            <!-- Immagine più grande (w-1/2 su desktop) -->
+                            <div class="relative group shrink-0 w-full md:w-1/2">
+                                <div class="absolute -inset-1.5 bg-yellow-400/20 rounded-xl blur opacity-20 group-hover:opacity-40 transition duration-700"></div>
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/2/22/Katherine_Johnson_medal.jpeg" alt="[Katherine Johnson mentre riceve la Medaglia presidenziale della libertà nel 2015]" class="relative rounded-xl border border-white/10 shadow-lg grayscale hover:grayscale-0 transition duration-700 w-full h-56 md:h-64 object-cover">
+                                <div class="absolute bottom-2 right-2 bg-black/60 backdrop-blur-md px-2 py-1 rounded text-[10px] text-white opacity-0 group-hover:opacity-100 transition-opacity">USA / 2015</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2016 con Immagine Integrata a Destra - Ingrandita -->
+                    <div class="card p-6 border-l-2 border-yellow-400/50 hover:bg-white/10 transition">
+                        <div class="flex flex-col md:flex-row items-center gap-8">
+                            <div class="flex items-start grow">
+                                <span class="text-yellow-400 font-bold mr-4 text-xl shrink-0">2016</span>
+                                <p class="text-gray-300 text-sm leading-relaxed">
+                                    Inaugurazione del <strong>Katherine G. Johnson Computational Research</strong> al Langley Research Center. Questo centro all'avanguardia celebra il suo contributo immenso alla ricerca computazionale, fungendo da hub per le future innovazioni tecnologiche della NASA e simbolo di eccellenza per le nuove generazioni di scienziati.
+                                </p>
+                            </div>
+                            <!-- Immagine più grande (w-1/2 su desktop) -->
+                            <div class="relative group shrink-0 w-full md:w-1/2">
+                                <div class="absolute -inset-1.5 bg-yellow-400/20 rounded-xl blur opacity-20 group-hover:opacity-40 transition duration-700"></div>
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/8/80/Katherine_Johnson_at_the_Katherine_G._Johnson_Computational_Research_Facility.jpg" alt="[Immagine di Katherine Johnson al Computational Research Facility]" class="relative rounded-xl border border-white/10 shadow-lg grayscale hover:grayscale-0 transition duration-700 w-full h-56 md:h-64 object-cover">
+                                <div class="absolute bottom-2 right-2 bg-black/60 backdrop-blur-md px-2 py-1 rounded text-[10px] text-white opacity-0 group-hover:opacity-100 transition-opacity">NASA / 2016</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card p-6 border-l-2 border-yellow-400/50 hover:bg-white/10 transition">
+                        <div class="flex items-start">
+                            <span class="text-yellow-400 font-bold mr-4 text-xl">2017</span>
+                            <p class="text-gray-300 text-sm leading-relaxed">
+                                Dopo il successo del film <em>Il diritto di contare</em>, Katherine riceve una <strong>standing ovation</strong> agli Oscar, celebrata come l'unica scienziata ancora in vita tra quelle ritratte.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="card p-6 border-l-2 border-yellow-400/50 hover:bg-white/10 transition">
+                        <div class="flex items-start">
+                            <span class="text-yellow-400 font-bold mr-4 text-xl">2019</span>
+                            <p class="text-gray-300 text-sm leading-relaxed">
+                                La NASA le intitola la struttura <strong>Verification and Validation (IV&V)</strong> in West Virginia, dedicata alla sicurezza delle missioni spaziali più critiche.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pagina: Citazioni -->
+    <section id="citazioni" class="page">
+        <div class="max-w-4xl mx-auto px-6 py-12 pb-24">
+            <h2 class="text-4xl font-bold mb-16 text-center text-yellow-400 uppercase tracking-widest">Pensiero e Visione</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+                <div class="card p-8 flex flex-col justify-between border-t border-yellow-400/30 bg-yellow-400/5">
+                    <p class="italic text-xl text-gray-200 leading-relaxed">
+                        "Mi piaceva imparare. Mi piaceva la matematica. Non ho mai avuto paura di chiedere 'perché'. Se volevi sapere qualcosa, dovevi chiederlo."
+                    </p>
+                    <div class="mt-6">
+                        <p class="text-gray-500 text-[10px] uppercase mt-1 tracking-tighter">Fonte: Autobiografia "My Remarkable Journey"</p>
+                    </div>
+                </div>
+
+                <div class="card p-8 flex flex-col justify-between border-t border-yellow-400/30 bg-yellow-400/5">
+                    <p class="italic text-xl text-gray-200 leading-relaxed">
+                        "Prendi sempre il tuo meglio e fallo diventare migliore."
+                    </p>
+                    <div class="mt-6">
+                        <p class="text-gray-500 text-[10px] uppercase mt-1 tracking-tighter">Fonte: Discorso agli studenti, NASA</p>
+                    </div>
+                </div>
+
+                <div class="card p-8 flex flex-col justify-between border-t border-yellow-400/30 bg-yellow-400/5">
+                    <p class="italic text-xl text-gray-200 leading-relaxed">
+                        "Dobbiamo sempre essere un passo avanti nel pensiero per poter essere un passo avanti nella tecnologia."
+                    </p>
+                    <div class="mt-6">
+                        <p class="text-gray-500 text-[10px] uppercase mt-1 tracking-tighter">Fonte: Intervista sull'innovazione scientifica</p>
+                    </div>
+                </div>
+
+                <div class="card p-8 flex flex-col justify-between border-t border-yellow-400/30 bg-yellow-400/5">
+                    <p class="italic text-xl text-gray-200 leading-relaxed">
+                        "Le donne sono capaci di fare tutto quello che fanno gli uomini. A volte hanno solo più immaginazione."
+                    </p>
+                    <div class="mt-6">
+                        <p class="text-gray-500 text-[10px] uppercase mt-1 tracking-tighter">Fonte: Intervista NASA Digital Archives</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center">
+                <p class="text-yellow-400 font-bold text-2xl uppercase tracking-[0.2em] opacity-80 italic">— Katherine Johnson</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pagina: Crediti -->
+    <section id="crediti" class="page">
+        <div class="max-w-4xl mx-auto px-6 py-12 pb-24">
+            <h2 class="text-4xl font-bold mb-12 text-center text-yellow-400 uppercase tracking-widest">Crediti e Risorse</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Sezione Fonti -->
+                <div class="card p-8 border-t-2 border-yellow-400/40">
+                    <div class="flex items-center mb-4">
+                        <svg class="w-6 h-6 text-yellow-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                        </svg>
+                        <h3 class="text-xl font-bold text-white uppercase tracking-tighter">Fonti Storiche</h3>
+                    </div>
+                    <ul class="text-gray-400 text-sm space-y-3 font-light">
+                        <li><span class="text-yellow-400">•</span> Archivi Storici NASA (NASA Digital Archives)</li>
+                        <li><span class="text-yellow-400">•</span> Biografia ufficiale "My Remarkable Journey"</li>
+                        <li><span class="text-yellow-400">•</span> Documentazione del Langley Research Center</li>
+                        <li><span class="text-yellow-400">•</span> Media Assets di Wikimedia Commons</li>
+                    </ul>
+                </div>
+
+                <!-- Sezione Tecnologie -->
+                <div class="card p-8 border-t-2 border-yellow-400/40">
+                    <div class="flex items-center mb-4">
+                        <svg class="w-6 h-6 text-yellow-400 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
+                        </svg>
+                        <h3 class="text-xl font-bold text-white uppercase tracking-tighter">Sviluppo Tecnico</h3>
+                    </div>
+                    <ul class="text-gray-400 text-sm space-y-3 font-light">
+                        <li><span class="text-yellow-400">•</span> <strong>Three.js</strong> per il motore grafico 3D della galassia</li>
+                        <li><span class="text-yellow-400">•</span> <strong>Tailwind CSS</strong> per il design responsivo</li>
+                        <li><span class="text-yellow-400">•</span> <strong>Google Fonts</strong> (Space Grotesk & Inter)</li>
+                        <li><span class="text-yellow-400">•</span> Animazioni CSS3 personalizzate</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Ringraziamenti Speciali -->
+            <div class="card p-10 mt-8 text-center bg-white/5 border border-white/10">
+                <h3 class="text-yellow-400 font-bold uppercase tracking-[0.2em] mb-4">Ispirazione STEM</h3>
+                <p class="text-gray-300 leading-relaxed max-w-2xl mx-auto italic font-light">
+                    "Questa risorsa è stata creata per onorare le donne nelle discipline STEM. Katherine Johnson ci ha insegnato che non importa da dove parti, ma quanto lontano osi guardare."
+                </p>
+                <div class="mt-8 flex justify-center">
+                    <p class="text-xs uppercase tracking-widest text-gray-500">Progetto PCTO 2026 | Classe 3BIN</p>
+                </div>
+            </div>
+
+            <!-- Link fuori dal div principale -->
+            <div class="mt-12 flex justify-center">
+                <button onclick="showPage('home')" class="group flex items-center space-x-2 text-xs uppercase tracking-[0.3em] text-gray-400 hover:text-yellow-400 transition-all duration-300">
+                    <svg class="w-4 h-4 transform group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                    </svg>
+                    <span>Torna alla Home</span>
+                </button>
+            </div>
+        </div>
+    </section>
+    
+    
+    <script src="script.js"></script>
+    
+    
+</body>
+</html>
