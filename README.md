@@ -1,1 +1,0 @@
-# l-eredita_di_katherine_johnson
