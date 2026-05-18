@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apollo 11: Il Calcolo di Katherine</title>
+    <!-- Tailwind CSS per lo stile e layout -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons per icone eleganti -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Special+Elite&display=swap');
+        .retro-font {
+            font-family: 'Share Tech Mono', monospace;
+        }
+        .story-font {
+            font-family: 'Special Elite', cursive;
+        }
+        canvas {
+            image-rendering: pixelated;
+        }
+        /* Custom scrollbar per il pannello informazioni */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 flex flex-col min-h-screen justify-between overflow-hidden select-none">
+
+    <!-- Header / Barra di Stato Superiore -->
+    <header class="bg-slate-900 border-b border-slate-800 p-4 flex items-center justify-between shadow-lg z-10">
+        <div class="flex items-center space-x-3">
+            <div class="bg-sky-500/10 p-2 rounded-lg border border-sky-500/30">
+                <i data-lucide="brain-circuit" class="w-6 h-6 text-sky-400"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold tracking-wider text-slate-100 uppercase retro-font">Apollo 11: Il Calcolo di Katherine</h1>
+                <p class="text-xs text-sky-400">"Verifica la traiettoria. Se i numeri sono giusti, lo siamo anche noi."</p>
+            </div>
+        </div>
+        <div class="flex items-center space-x-4">
+            <button id="audio-toggle" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 border border-slate-700 transition">
+                <i data-lucide="volume-2" id="audio-icon" class="w-5 h-5"></i>
+            </button>
+            <button id="btn-info" class="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 border border-slate-700 transition">
+                <i data-lucide="help-circle" class="w-5 h-5"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Workspace (Canvas + Side Panels) -->
+    <main class="flex-1 relative flex flex-col md:flex-row w-full h-full overflow-hidden">
+        
+        <!-- Game Canvas Area -->
+        <div class="flex-1 relative bg-black flex items-center justify-center">
+            <canvas id="gameCanvas" class="w-full h-full max-h-[85vh] block"></canvas>
+            
+            <!-- Telemetry Overlay (HUD) -->
+            <div class="absolute top-4 left-4 bg-slate-900/80 backdrop-blur-md border border-slate-700 p-4 rounded-xl text-xs retro-font min-w-[200px] space-y-2 pointer-events-none">
+                <div class="text-sky-400 font-bold uppercase tracking-wider mb-2 border-b border-slate-700 pb-1 flex items-center justify-between">
+                    <span>PARAMETRI DI MISSIONE</span>
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                </div>
+                <!-- INDICATORE DIFFICOLTÀ CORRENTE -->
+                <div class="flex justify-between items-center bg-slate-950/60 p-1.5 rounded-lg border border-slate-800">
+                    <span class="text-slate-400 text-[10px]">DIFFICOLTÀ:</span>
+                    <span id="hud-difficulty" class="font-bold uppercase text-[10px] px-2 py-0.5 rounded">INTERMEDIO</span>
+                </div>
+                <!-- CRONOMETRO AGGIUNTO AL DISPLAY DI TELEMETRIA -->
+                <div class="flex justify-between border-b border-slate-800 pb-1.5 pt-1">
+                    <span class="text-yellow-400 font-bold flex items-center"><i data-lucide="timer" class="w-3.5 h-3.5 mr-1 text-yellow-400"></i>TEMPO:</span>
+                    <span id="hud-timer" class="text-yellow-400 font-bold text-sm">00:00.0</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-400">ALTITUDINE DEL LEM:</span>
+                    <span id="hud-alt" class="text-white font-bold">1000 m</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-400">SETTORE DI VOLO (x):</span>
+                    <span id="hud-posx" class="text-white font-bold">0</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-400">VELOC. VERT (dy/dt):</span>
+                    <span id="hud-vy" class="text-white font-bold">0.0 m/s</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-400">VELOC. ORIZ (dx/dt):</span>
+                    <span id="hud-vx" class="text-white font-bold">0.0 m/s</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-slate-400">ANGOLO (θ):</span>
+                    <span id="hud-angle" class="text-white font-bold">0°</span>
+                </div>
+                <div class="space-y-1 pt-1 border-t border-slate-800">
+                    <div class="flex justify-between text-[10px] text-slate-400">
+                        <span>CARBURANTE (Fuel):</span>
+                        <span id="hud-fuel-pct" class="font-bold text-emerald-400">100%</span>
+                    </div>
+                    <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden">
+                        <div id="hud-fuel-bar" class="bg-emerald-500 h-full transition-all duration-100" style="width: 100%;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pre-Mission Calculation Step Overlay (Katherine's challenge) -->
+            <div id="calc-step" class="absolute inset-0 bg-slate-950/98 backdrop-blur-sm hidden flex-col items-center justify-center p-6 z-30 space-y-4 text-center overflow-y-auto">
+                <div class="bg-sky-500/10 p-3 rounded-full border border-sky-500/30 text-sky-400">
+                    <i data-lucide="binary" class="w-12 h-12"></i>
+                </div>
+                <h3 class="text-2xl font-black retro-font tracking-wider text-white">CONTROLLO TRAIETTORIA DI PRECISIONE</h3>
+                
+                <!-- BADGE DIFFICOLTÀ SULLA SCHERMATA DI CALCOLO -->
+                <div class="inline-flex items-center space-x-2 bg-slate-900 border border-slate-800 px-4 py-1.5 rounded-full">
+                    <span class="text-xs text-slate-400 retro-font">DIFFICOLTÀ LIVELLO:</span>
+                    <span id="calc-difficulty" class="text-xs font-black retro-font uppercase">CASUALE</span>
+                </div>
+
+                <div class="story-font text-slate-300 max-w-xl text-xs space-y-2 leading-relaxed">
+                    <p>Houston. I computer elettronici hanno rilevato anomalie gravitazionali nel settore. Katherine, risolvi i calcoli spaziali manuali prima di dare il via alla discesa.</p>
+                    <p class="text-sm bg-sky-950/50 p-3 rounded-xl border border-sky-800">Trova il settore sicuro <strong class="text-sky-300">X (Colonna)</strong> e l'altitudine <strong class="text-emerald-400">Y (Riga)</strong> utilizzando numeri <strong class="text-sky-300">da 0 a 9</strong>.</p>
+                </div>
+                
+                <!-- Equations Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-2xl w-full text-left">
+                    <!-- Equation X -->
+                    <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex flex-col space-y-3">
+                        <span class="retro-font text-sky-400 font-bold text-xs tracking-wider">SETTORE ORIZZONTALE X (0-9)</span>
+                        <div class="bg-black py-3 px-2 rounded-lg text-center font-bold text-lg text-white border border-slate-800 retro-font">
+                            X = <span id="formula-x" class="text-sky-300">--</span>
+                        </div>
+                        <input type="number" id="calc-input-x" min="0" max="9" placeholder="Inserisci X (da 0 a 9)" class="px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-center text-sm text-white retro-font font-bold focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition">
+                    </div>
+
+                    <!-- Equation Y -->
+                    <div class="bg-slate-900 border border-slate-800 p-4 rounded-xl flex flex-col space-y-3">
+                        <span class="retro-font text-emerald-400 font-bold text-xs tracking-wider">SETTORE VERTICALE Y (0-9)</span>
+                        <div class="bg-black py-3 px-2 rounded-lg text-center font-bold text-lg text-white border border-slate-800 retro-font">
+                            Y = <span id="formula-y" class="text-emerald-300">--</span>
+                        </div>
+                        <input type="number" id="calc-input-y" min="0" max="9" placeholder="Inserisci Y (da 0 a 9)" class="px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-lg text-center text-sm text-white retro-font font-bold focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition">
+                    </div>
+                </div>
+                
+                <button id="calc-btn" class="px-8 py-3 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl transition duration-200 retro-font tracking-wider flex items-center space-x-2 overflow-hidden mx-auto">
+                    <i data-lucide="check-circle" class="w-5 h-5"></i>
+                    <span>CONFERMA SISTEMA DI EQUAZIONI</span>
+                </button>
+                <p id="calc-error" class="text-rose-500 font-bold hidden retro-font text-sm">Errore. Uno o entrambi i valori non corrispondono. Ricorda che il risultato deve essere compreso tra 0 e 9!</p>
+            </div>
+
+            <!-- Mobile Controls Overlay (Visible only on touch devices) -->
+            <div class="absolute bottom-6 left-0 right-0 flex justify-between px-6 md:hidden pointer-events-none z-10">
+                <!-- Rotate Buttons Left -->
+                <div class="flex space-x-3 pointer-events-auto">
+                    <button id="ctrl-left" class="w-14 h-14 bg-slate-800/80 active:bg-slate-700/90 border border-slate-600 rounded-full flex items-center justify-center text-white active:scale-95 transition-transform touch-none shadow-lg">
+                        <i data-lucide="rotate-ccw" class="w-6 h-6"></i>
+                    </button>
+                    <button id="ctrl-right" class="w-14 h-14 bg-slate-800/80 active:bg-slate-700/90 border border-slate-600 rounded-full flex items-center justify-center text-white active:scale-95 transition-transform touch-none shadow-lg">
+                        <i data-lucide="rotate-cw" class="w-6 h-6"></i>
+                    </button>
+                </div>
+                <!-- Thrust Button Right -->
+                <div class="pointer-events-auto">
+                    <button id="ctrl-thrust" class="w-16 h-16 bg-red-600/80 active:bg-red-500/90 border border-red-500 rounded-full flex flex-col items-center justify-center text-white active:scale-95 transition-transform touch-none shadow-lg font-bold text-xs retro-font">
+                        <i data-lucide="flame" class="w-7 h-7 mb-0.5 animate-bounce"></i>
+                        SPINTA
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer / Keyboard instructions for desktop -->
+    <footer class="hidden md:flex bg-slate-900 border-t border-slate-800 px-6 py-3 justify-between items-center text-xs text-slate-400 retro-font">
+        <div class="flex space-x-6">
+            <span class="flex items-center"><kbd class="px-1.5 py-0.5 bg-slate-800 border border-slate-700 rounded text-slate-200 mr-2">▲</kbd> o <kbd class="px-1.5 py-0.5 bg-slate-800 border border-slate-700 rounded text-slate-200 mr-2">SPAZIO</kbd> Spinta</span>
+            <span class="flex items-center"><kbd class="px-1.5 py-0.5 bg-slate-800 border border-slate-700 rounded text-slate-200 mr-2">◀</kbd> / <kbd class="px-1.5 py-0.5 bg-slate-800 border border-slate-700 rounded text-slate-200 mr-2">▶</kbd> Ruota</span>
+        </div>
+        <div class="text-right">
+            <span id="footer-limits">Parametri Atterraggio: dy/dt &lt; 5.0 m/s, dx/dt &lt; 3.0 m/s, inclinazione &lt; 23°</span>
+        </div>
+    </footer>
+
+    <!-- INSTRUCTIONS MODAL -->
+    <div id="modal-info" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4 z-50">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative">
+            <button id="close-info" class="absolute top-4 right-4 text-slate-400 hover:text-white transition">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+            <div class="flex items-center space-x-3 mb-4">
+                <div class="bg-sky-500/10 p-2 rounded-lg border border-sky-500/30 text-sky-500">
+                    <i data-lucide="info" class="w-6 h-6"></i>
+                </div>
+                <h2 class="text-xl font-bold retro-font tracking-wider">GUIDA DI ALLUNAGGIO CON KATHERINE JOHNSON</h2>
+            </div>
+            <div class="space-y-4 text-sm text-slate-300 leading-relaxed overflow-y-auto max-h-[60vh] pr-2 story-font">
+                <p>Katherine Johnson ha calcolato a mano i vettori e le coordinate della missione. Per far partire i motori, devi validare i parametri del computer elettronico.</p>
+                
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
+                    <p class="font-bold text-sky-400 retro-font uppercase text-xs">FASE 1: RISOLVI LE COORDINATE (DA 0 A 9)</p>
+                    <p>La mappa lunare è divisa in una griglia di settori numerati da 0 a 9 sia in orizzontale (X) che in verticale (Y):</p>
+                    <ol class="list-decimal pl-5 space-y-1.5 text-xs text-slate-300">
+                        <li>Risolvi le due semplici espressioni matematiche mostrate. Tutti i numeri utilizzati e i risultati saranno sempre <strong>numeri interi compresi tra 0 e 9</strong> (es. <code class="text-sky-300 font-bold">(2 × 3) - 1 = 5</code>).</li>
+                        <li>Inserisci il risultato di <strong>X</strong> e di <strong>Y</strong> nei rispettivi campi.</li>
+                        <li>Clicca su <strong>"CONFERMA SISTEMA DI EQUAZIONI"</strong> per accendere i propulsori di discesa!</li>
+                    </ol>
+                    <p class="text-xs text-amber-400 font-bold">Nota: Se ti schianti e premi su "RIPROVA", la mappa e la difficoltà non cambieranno, il cronometro ripartirà da zero e potrai volare subito senza ripetere la somma!</p>
+                </div>
+
+                <div class="space-y-2">
+                    <p class="font-bold text-slate-200 retro-font uppercase text-xs">FASE 2: LE TRE DIFFICOLTÀ CASUALI</p>
+                    <p>Ogni livello assegnerà una difficoltà casuale con parametri fisici e matematici unici:</p>
+                    <ul class="list-disc pl-5 space-y-1 text-xs text-slate-300">
+                        <li><strong class="text-emerald-400">Facile 🟢:</strong> Gravità ridottissima, <span class="font-bold">pista d'atterraggio grandissima (200 px)</span>, tanto carburante, formule semplicissime senza parentesi.</li>
+                        <li><strong class="text-sky-400">Intermedio 🔵:</strong> Parametri di volo bilanciati, <span class="font-bold">pista d'atterraggio media (110 px)</span>, formule con addizioni e sottrazioni tra parentesi.</li>
+                        <li><strong class="text-rose-400">Difficile 🔴:</strong> Gravità più pesante, <span class="font-bold">pista d'atterraggio molto stretta e piccola (55 px)</span>, meno carburante, formule complesse con moltiplicazioni e divisioni.</li>
+                    </ul>
+                </div>
+            </div>
+            <button id="close-info-btn" class="mt-6 w-full py-3 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl transition duration-200 retro-font tracking-wider">INIZIA IL CALCOLO DI TRAIETTORIA</button>
+        </div>
+    </div>
+
+    <!-- GAME OVER / VICTORY SCREEN OVERLAY (In-Canvas HTML overlay) -->
+    <div id="game-modal" class="fixed inset-0 bg-black/75 backdrop-blur-sm hidden items-center justify-center p-4 z-40">
+        <div class="bg-slate-900 border-2 border-slate-800 rounded-2xl max-w-md w-full p-8 shadow-2xl text-center space-y-6 relative overflow-hidden">
+            <!-- Decorative space grid decoration -->
+            <div class="absolute -right-20 -top-20 w-40 h-40 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" id="modal-glow"></div>
+            
+            <div class="flex justify-center" id="modal-icon-container">
+                <!-- Icon inserted by JS -->
+            </div>
+
+            <div class="space-y-2">
+                <h3 id="modal-title" class="text-2xl font-black retro-font tracking-wider text-white uppercase">TITOLO</h3>
+                <p id="modal-desc" class="text-sm text-slate-400 leading-relaxed story-font">Descrizione dettagliata dell'evento.</p>
+            </div>
+
+            <!-- TABELLA DI STATISTICHE CON CRONOMETRO INCLUSO -->
+            <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 grid grid-cols-3 gap-2 text-[11px] retro-font" id="modal-stats">
+                <div class="text-left border-r border-slate-800 pr-2">
+                    <span class="block text-slate-500">IMP. SPEED</span>
+                    <span id="stat-speed" class="text-sm font-bold text-white">-- m/s</span>
+                </div>
+                <div class="text-left border-r border-slate-800 px-2">
+                    <span class="block text-slate-500">CARBURANTE</span>
+                    <span id="stat-fuel" class="text-sm font-bold text-white">-- %</span>
+                </div>
+                <div class="text-left pl-2">
+                    <span class="block text-yellow-500">TEMPO</span>
+                    <span id="stat-time" class="text-sm font-bold text-yellow-400">--s</span>
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-3">
+                <button id="btn-restart" class="flex-1 py-3 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl transition-all duration-200 shadow-lg shadow-sky-500/10 hover:shadow-sky-500/25 retro-font tracking-wider flex items-center justify-center space-x-2">
+                    <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
+                    <span>RIPROVA</span>
+                </button>
+                <button id="btn-next" class="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl border border-slate-700 transition duration-200 retro-font tracking-wider flex items-center justify-center space-x-2">
+                    <span>PROSSIMO SITO</span>
+                    <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AUDIO SYSTEM & GAME ENGINE -->
+    <script>
+        // Init Lucide Icons
+        lucide.createIcons();
+
+        // Canvas Setup
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Telemetry DOM elements
+        const hudAlt = document.getElementById('hud-alt');
+        const hudPosX = document.getElementById('hud-posx');
+        const hudVy = document.getElementById('hud-vy');
+        const hudVx = document.getElementById('hud-vx');
+        const hudAngle = document.getElementById('hud-angle');
+        const hudFuelPct = document.getElementById('hud-fuel-pct');
+        const hudFuelBar = document.getElementById('hud-fuel-bar');
+        const hudTimer = document.getElementById('hud-timer'); // DOM cronometro
+        const hudDifficultyBadge = document.getElementById('hud-difficulty'); // Badge difficoltà in HUD
+
+        // Modal Elements
+        const infoModal = document.getElementById('modal-info');
+        const gameModal = document.getElementById('game-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalDesc = document.getElementById('modal-desc');
+        const modalGlow = document.getElementById('modal-glow');
+        const modalIconContainer = document.getElementById('modal-icon-container');
+        const statSpeed = document.getElementById('stat-speed');
+        const statFuel = document.getElementById('stat-fuel');
+        const statTime = document.getElementById('stat-time'); // Statistiche tempo nel modal
+
+        // Calculation Step Elements
+        const calcStep = document.getElementById('calc-step');
+        const calcDifficultyText = document.getElementById('calc-difficulty'); // Difficoltà nel calcolo
+        const calcInputX = document.getElementById('calc-input-x');
+        const calcInputY = document.getElementById('calc-input-y');
+        const calcBtn = document.getElementById('calc-btn');
+        const calcError = document.getElementById('calc-error');
+        const footerLimits = document.getElementById('footer-limits');
+
+        // Button Listeners
+        document.getElementById('btn-info').onclick = () => infoModal.classList.replace('hidden', 'flex');
+        document.getElementById('close-info').onclick = () => infoModal.classList.replace('flex', 'hidden');
+        document.getElementById('close-info-btn').onclick = () => infoModal.classList.replace('flex', 'hidden');
+        
+        // Cliccando RIPROVA viene passato false a resetLevel per mantenere mappa, calcoli e difficoltà identici!
+        document.getElementById('btn-restart').onclick = () => { gameModal.classList.replace('flex', 'hidden'); resetLevel(false); };
+        document.getElementById('btn-next').onclick = () => { gameModal.classList.replace('flex', 'hidden'); nextLevel(); };
+
+        // Game Configuration & Dynamic Physics Variables (ora dipendenti dal livello)
+        let activeDifficulty = 'INTERMEDIO'; // 'FACILE', 'INTERMEDIO', 'DIFFICILE'
+        let activeGravity = 0.025;     
+        let activeSafeVy = 5.0;       
+        let activeSafeVx = 3.0;       
+        let activeSafeAngle = 0.40;   
+        let activeMaxFuel = 1500;
+        let activePadWidth = 110;
+        
+        const ROTATION_SPEED = 0.04; 
+        const THRUST_POWER = 0.11;  
+
+        // Web Audio Synthesizer
+        let audioCtx = null;
+        let isMuted = false;
+        let thrusterSound = null;
+
+        function initAudio() {
+            if (audioCtx) return;
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
+        const audioToggleBtn = document.getElementById('audio-toggle');
+        const audioIcon = document.getElementById('audio-icon');
+
+        audioToggleBtn.addEventListener('click', () => {
+            isMuted = !isMuted;
+            if (isMuted) {
+                audioIcon.setAttribute('data-lucide', 'volume-x');
+                stopThrusterSound();
+            } else {
+                audioIcon.setAttribute('data-lucide', 'volume-2');
+                initAudio();
+            }
+            lucide.createIcons();
+        });
+
+        function playSound(type) {
+            if (isMuted) return;
+            initAudio();
+            if (!audioCtx) return;
+
+            if (type === 'explosion') {
+                const duration = 2;
+                const bufferSize = audioCtx.sampleRate * duration;
+                const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) { data[i] = Math.random() * 2 - 1; }
+                const noise = audioCtx.createBufferSource();
+                noise.buffer = buffer;
+                const filter = audioCtx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(300, audioCtx.currentTime);
+                filter.frequency.exponentialRampToValueAtTime(10, audioCtx.currentTime + duration);
+                const gain = audioCtx.createGain();
+                gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+                noise.connect(filter); filter.connect(gain); gain.connect(audioCtx.destination);
+                noise.start();
+            } else if (type === 'success') {
+                const now = audioCtx.currentTime;
+                const notes = [261.63, 329.63, 392.00, 523.25, 659.25, 783.99];
+                notes.forEach((freq, idx) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'triangle'; osc.frequency.setValueAtTime(freq, now + idx * 0.1);
+                    gain.gain.setValueAtTime(0, now);
+                    gain.gain.linearRampToValueAtTime(0.2, now + idx * 0.1 + 0.05);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.1 + 1.2);
+                    osc.connect(gain); gain.connect(audioCtx.destination);
+                    osc.start(now + idx * 0.1); osc.stop(now + idx * 0.1 + 1.5);
+                });
+            }
+        }
+
+        function startThrusterSound() {
+            if (isMuted || thrusterSound) return;
+            initAudio();
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); const filter = audioCtx.createBiquadFilter();
+            osc.type = 'sawtooth'; osc.frequency.setValueAtTime(55, audioCtx.currentTime);
+            const mod = audioCtx.createOscillator(); const modGain = audioCtx.createGain(); mod.frequency.value = 18; modGain.gain.value = 15;
+            mod.connect(modGain); modGain.connect(osc.frequency); mod.start();
+            filter.type = 'lowpass'; filter.frequency.setValueAtTime(120, audioCtx.currentTime); gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+            osc.connect(filter); filter.connect(gain); gain.connect(audioCtx.destination); osc.start();
+            thrusterSound = { osc, gain, mod, modGain };
+        }
+
+        function stopThrusterSound() { if (thrusterSound) { try { thrusterSound.osc.stop(); thrusterSound.mod.stop(); } catch(e) {} thrusterSound = null; } }
+
+        // Game State Variables
+        let rocket;
+        let terrainPoints = [];
+        let padIndex = 0; 
+        let padXStart, padXEnd, padY; 
+        let starfield = [];
+        let particles = [];
+        let gameStatus = 'CALC_PHASE'; 
+        let keys = {};
+        let currentSectors = ["Mare della Tranquillità", "Cratere Tycho", "Oceano delle Tempeste", "Cratere Copernico"];
+        let sectorIndex = 0;
+
+        // Cronometro Variables
+        let startTime = null;
+        let elapsedTime = 0; 
+
+        // Target grid sectors (must be 0 to 9)
+        let targetGridX = 0;
+        let targetGridY = 0;
+        
+        // Exact pixel values converted from grid sectors
+        let targetX = 0;
+        let targetY = 0;
+
+        // Mobile touch events tracking
+        let mobileControls = { left: false, right: false, thrust: false };
+
+        // Handle Touch Screen Controls
+        function setupTouchListeners() {
+            const bindTouch = (id, controlKey) => {
+                const btn = document.getElementById(id); if (!btn) return;
+                const startEvent = (e) => { e.preventDefault(); mobileControls[controlKey] = true; };
+                const endEvent = (e) => { e.preventDefault(); mobileControls[controlKey] = false; };
+                btn.addEventListener('touchstart', startEvent, { passive: false });
+                btn.addEventListener('touchend', endEvent, { passive: false });
+                btn.addEventListener('touchcancel', endEvent, { passive: false });
+                btn.addEventListener('mousedown', () => mobileControls[controlKey] = true);
+                btn.addEventListener('mouseup', () => mobileControls[controlKey] = false);
+                btn.addEventListener('mouseleave', () => mobileControls[controlKey] = false);
+            };
+            bindTouch('ctrl-left', 'left'); bindTouch('ctrl-right', 'right'); bindTouch('ctrl-thrust', 'thrust');
+        }
+
+        // Starfield background generation
+        function generateStars() {
+            starfield = [];
+            for (let i = 0; i < 150; i++) { starfield.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, size: Math.random() * 1.8 + 0.2, brightness: Math.random() * 0.5 + 0.5, twinkleSpeed: Math.random() * 0.02 + 0.005, twinkleDirection: Math.random() > 0.5 ? 1 : -1 }); }
+        }
+
+        // Procedural moon terrain generation with grid-aligned landing pad
+        function generateTerrain(forcedGridX, forcedGridY) {
+            terrainPoints = [];
+            const numPoints = 40;
+            const segmentWidth = canvas.width / (numPoints - 1);
+            
+            // Genera una colonna della griglia (X) da 2 a 7 (lasciando spazio ai bordi dello schermo)
+            if (forcedGridX === undefined) {
+                targetGridX = Math.floor(Math.random() * 6) + 2; 
+            } else {
+                targetGridX = forcedGridX;
+            }
+
+            // Genera una riga della griglia (Y) da 7 a 8 (parte inferiore dello schermo)
+            if (forcedGridY === undefined) {
+                targetGridY = Math.floor(Math.random() * 2) + 7; 
+            } else {
+                targetGridY = forcedGridY;
+            }
+
+            const colW = canvas.width / 10;
+            const rowH = canvas.height / 10;
+            
+            // Calcola le coordinate in pixel corrispondenti ai centri dei settori di griglia
+            targetX = targetGridX * colW + colW / 2;
+            padY = targetGridY * rowH + rowH / 2;
+            
+            padXStart = targetX - activePadWidth / 2;
+            padXEnd = targetX + activePadWidth / 2;
+            
+            // Build terrain points
+            for (let i = 0; i < numPoints; i++) {
+                let x = i * segmentWidth;
+                let y;
+                
+                if (x >= padXStart && x <= padXEnd) {
+                    y = padY;
+                } else {
+                    const baseHeight = canvas.height * 0.76;
+                    const wave1 = Math.sin(i * 0.3) * (canvas.height * 0.07);
+                    const wave2 = Math.cos(i * 0.7) * (canvas.height * 0.03);
+                    y = baseHeight + wave1 + wave2;
+                    y += (Math.random() - 0.5) * 10;
+                    y = Math.max(canvas.height * 0.62, Math.min(canvas.height * 0.92, y));
+                }
+                
+                terrainPoints.push({ x: x, y: y });
+            }
+            
+            terrainPoints.push({ x: padXStart, y: padY });
+            terrainPoints.push({ x: padXEnd, y: padY });
+            terrainPoints.sort((a, b) => a.x - b.x);
+            
+            terrainPoints.forEach(pt => {
+                if (pt.x >= padXStart && pt.x <= padXEnd) {
+                    pt.y = padY;
+                }
+            });
+        }
+
+        // Particle generator for thrusters
+        class Particle {
+            constructor(x, y, vx, vy, color, life, size) { this.x = x; this.y = y; this.vx = vx; this.vy = vy; this.color = color; this.maxLife = life; this.life = life; this.size = size; }
+            update() { this.x += this.vx; this.y += this.vy; this.life--; }
+            draw() { ctx.save(); ctx.globalAlpha = this.life / this.maxLife; ctx.fillStyle = this.color; ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill(); ctx.restore(); }
+        }
+
+        // Procedural generator to output expressions using ONLY numbers 0-9
+        // Varia la struttura delle formule in base alla difficoltà attiva!
+        function generateSingleDigitExpression(target, difficulty) {
+            while (true) {
+                let A = Math.floor(Math.random() * 10); // 0-9
+                let B = Math.floor(Math.random() * 10); // 0-9
+                let C = Math.floor(Math.random() * 10); // 0-9
+                
+                if (difficulty === 'FACILE') {
+                    // Solo semplici somme o sottrazioni dirette (2 termini)
+                    if (A + B === target) {
+                        return `${A} + ${B}`;
+                    }
+                    if (A - B === target && A >= B) {
+                        return `${A} - ${B}`;
+                    }
+                } else if (difficulty === 'INTERMEDIO') {
+                    // Formule a 3 termini con parentesi (+ e -)
+                    if ((A + B) - C === target && (A + B) <= 18) {
+                        return `(${A} + ${B}) - ${C}`;
+                    }
+                    if ((A - B) + C === target && (A - B) >= 0) {
+                        return `(${A} - ${B}) + ${C}`;
+                    }
+                } else {
+                    // DIFFICILE: Formule complesse con moltiplicazione o divisione
+                    if ((A * B) - C === target && (A * B) <= 20) {
+                        return `(${A} × ${B}) - ${C}`;
+                    }
+                    if (B > 0 && A % B === 0 && (A / B) + C === target) {
+                        return `(${A} ÷ ${B}) + ${C}`;
+                    }
+                }
+            }
+        }
+
+        // Configura i parametri fisici in base alla difficoltà scelta
+        function applyDifficultySettings(diff) {
+            activeDifficulty = diff;
+            
+            // Aggiorna lo stile del badge e i parametri
+            if (diff === 'FACILE') {
+                activeGravity = 0.018;     // Discesa lentissima
+                activeSafeVy = 6.0;        // Limite verticale molto tollerante (60 m/s nel HUD)
+                activeSafeVx = 4.0;        // Limite orizzontale tollerante (40 m/s nel HUD)
+                activeSafeAngle = 0.50;    // Inclinazione amplissima (~28 gradi)
+                activeMaxFuel = 1800;      // Serbatoio extra capiente
+                activePadWidth = 200;      // PISTA MOLTO GRANDE (200px) per una massima facilità!
+                
+                hudDifficultyBadge.innerText = "FACILE 🟢";
+                hudDifficultyBadge.className = "font-bold uppercase text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/40";
+                
+                calcDifficultyText.innerText = "FACILE 🟢";
+                calcDifficultyText.className = "text-xs font-black retro-font uppercase text-emerald-400";
+            } else if (diff === 'INTERMEDIO') {
+                activeGravity = 0.025;     
+                activeSafeVy = 5.0;        
+                activeSafeVx = 3.0;        
+                activeSafeAngle = 0.40;    // ~23 gradi
+                activeMaxFuel = 1500;      
+                activePadWidth = 110;      // PISTA MEDIA (110px) per un controllo bilanciato
+                
+                hudDifficultyBadge.innerText = "INTERMEDIO 🔵";
+                hudDifficultyBadge.className = "font-bold uppercase text-[10px] px-2 py-0.5 rounded bg-sky-500/20 text-sky-400 border border-sky-500/40";
+                
+                calcDifficultyText.innerText = "INTERMEDIO 🔵";
+                calcDifficultyText.className = "text-xs font-black retro-font uppercase text-sky-400";
+            } else {
+                activeGravity = 0.035;     // Gravità lunare standard più decisa
+                activeSafeVy = 3.8;        // Limite di atterraggio severo (38 m/s nel HUD)
+                activeSafeVx = 2.0;        // Spostamento orizzontale severo (20 m/s nel HUD)
+                activeSafeAngle = 0.22;    // Angolo dritto richiesto (~12 gradi max)
+                activeMaxFuel = 1100;      // Meno carburante, serve precisione!
+                activePadWidth = 55;       // PISTA MOLTO PICCOLA (55px) per una sfida intensa e millimetrica!
+                
+                hudDifficultyBadge.innerText = "DIFFICILE 🔴";
+                hudDifficultyBadge.className = "font-bold uppercase text-[10px] px-2 py-0.5 rounded bg-rose-500/20 text-rose-400 border border-rose-500/40 animate-pulse";
+                
+                calcDifficultyText.innerText = "DIFFICILE 🔴";
+                calcDifficultyText.className = "text-xs font-black retro-font uppercase text-rose-400";
+            }
+
+            // Aggiorna la dicitura dei limiti in fondo allo schermo
+            const vyHUD = (activeSafeVy * 10).toFixed(0);
+            const vxHUD = (activeSafeVx * 10).toFixed(0);
+            const angleHUD = Math.round(activeSafeAngle * (180 / Math.PI));
+            footerLimits.innerText = `Parametri Atterraggio: dy/dt < ${activeSafeVy.toFixed(1)} m/s, dx/dt < ${activeSafeVx.toFixed(1)} m/s, inclinazione < ${angleHUD}°`;
+        }
+
+        // Calculation step logic
+        calcBtn.onclick = checkCalculation;
+        function showCalculationStep() {
+            gameStatus = 'CALC_PHASE';
+            
+            // Assegna una difficoltà CASUALE ad ogni nuova mappa/livello
+            const difficulties = ['FACILE', 'INTERMEDIO', 'DIFFICILE'];
+            const randomDiff = difficulties[Math.floor(Math.random() * difficulties.length)];
+            applyDifficultySettings(randomDiff);
+
+            // Genera la mappa basata sulla colonna targetGridX e riga targetGridY
+            generateTerrain();
+
+            // Genera le formule matematiche su misura della difficoltà attiva
+            const exprX = generateSingleDigitExpression(targetGridX, activeDifficulty);
+            const exprY = generateSingleDigitExpression(targetGridY, activeDifficulty);
+            
+            // Inject expressions into UI
+            document.getElementById('formula-x').innerText = exprX;
+            document.getElementById('formula-y').innerText = exprY;
+            
+            calcInputX.value = '';
+            calcInputY.value = '';
+            calcError.classList.add('hidden');
+            calcStep.classList.replace('hidden', 'flex');
+        }
+
+        function checkCalculation() {
+            const enteredX = parseInt(calcInputX.value);
+            const enteredY = parseInt(calcInputY.value);
+            
+            // Validate both calculated grid sector codes
+            if (!isNaN(enteredX) && !isNaN(enteredY) && enteredX === targetGridX && enteredY === targetGridY) {
+                calcStep.classList.replace('flex', 'hidden');
+                startFlight();
+            } else {
+                calcError.classList.remove('hidden');
+                playSound('explosion'); // Acoustic feedback
+            }
+        }
+
+        // Reset level parameters. Se showNewMap è falso, la mappa, i calcoli e la difficoltà vengono conservati!
+        function resetLevel(showNewMap = true) {
+            rocket = { 
+                x: canvas.width / 2, 
+                y: 100, 
+                vx: (Math.random() - 0.5) * 1.5, 
+                vy: 0.2,                         
+                angle: (Math.random() - 0.5) * 0.2, 
+                fuel: activeMaxFuel,                      
+                maxFuel: activeMaxFuel, 
+                width: 24, 
+                height: 32, 
+                thrusting: false 
+            };
+            particles = [];
+            stopThrusterSound();
+
+            // Reset del cronometro
+            startTime = null;
+            elapsedTime = 0;
+            hudTimer.innerText = "00:00.0";
+
+            if (showNewMap) {
+                generateStars();
+                showCalculationStep();
+            } else {
+                // RIPROVA: Applica di nuovo i parametri della difficoltà esistente per sicurezza, ma avvia subito il volo
+                applyDifficultySettings(activeDifficulty);
+                rocket.fuel = activeMaxFuel;
+                rocket.maxFuel = activeMaxFuel;
+                calcStep.classList.add('hidden');
+                startFlight();
+            }
+        }
+
+        function startFlight() { 
+            gameStatus = 'PLAYING'; 
+            startTime = Date.now(); // Avvia il cronometro appena comincia il volo reale
+        }
+
+        // Load the next level (changes terrain, difficulty, and requires new calculation)
+        function nextLevel() {
+            sectorIndex = (sectorIndex + 1) % currentSectors.length;
+            resetLevel(true); 
+        }
+
+        // Formatta il tempo in millisecondi in un formato leggibile MM:SS.d
+        function formatTime(ms) {
+            const totalSeconds = ms / 1000;
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = Math.floor(totalSeconds % 60);
+            const tenths = Math.floor((ms % 1000) / 100);
+            
+            const padMin = String(minutes).padStart(2, '0');
+            const padSec = String(seconds).padStart(2, '0');
+            
+            return `${padMin}:${padSec}.${tenths}`;
+        }
+
+        // Physics update and collision check
+        function update() {
+            if (gameStatus !== 'PLAYING') return;
+
+            // Aggiorna il cronometro
+            if (startTime) {
+                elapsedTime = Date.now() - startTime;
+                hudTimer.innerText = formatTime(elapsedTime);
+            }
+
+            // Handle rotations (Left / Right)
+            if (keys['ArrowLeft'] || keys['a'] || mobileControls.left) { rocket.angle -= ROTATION_SPEED; }
+            if (keys['ArrowRight'] || keys['d'] || mobileControls.right) { rocket.angle += ROTATION_SPEED; }
+
+            // Handle main engine thrust
+            if ((keys['ArrowUp'] || keys[' '] || keys['w'] || mobileControls.thrust) && rocket.fuel > 0) {
+                rocket.thrusting = true; rocket.fuel -= 1.8; 
+                const thrustX = Math.sin(rocket.angle) * THRUST_POWER; const thrustY = -Math.cos(rocket.angle) * THRUST_POWER; rocket.vx += thrustX; rocket.vy += thrustY;
+                const exhaustX = rocket.x + Math.sin(rocket.angle) * (rocket.height / 2); const exhaustY = rocket.y + Math.cos(rocket.angle) * (rocket.height / 2);
+                for (let i = 0; i < 3; i++) { const scatterX = (Math.random() - 0.5) * 4; const scatterY = (Math.random() - 0.5) * 4; const pVx = Math.sin(rocket.angle) * 4 + scatterX; const pVy = Math.cos(rocket.angle) * 4 + scatterY; particles.push(new Particle( exhaustX, exhaustY, pVx, pVy, Math.random() > 0.4 ? '#f97316' : '#eab308', Math.random() * 15 + 10, Math.random() * 3 + 1.5 )); }
+                startThrusterSound();
+            } else { rocket.thrusting = false; stopThrusterSound(); }
+
+            // Apply gravity and update position
+            rocket.vy += activeGravity; rocket.x += rocket.vx; rocket.y += rocket.vy;
+            if (rocket.angle < -Math.PI) rocket.angle += Math.PI * 2; if (rocket.angle > Math.PI) rocket.angle -= Math.PI * 2;
+            if (rocket.x < 0) rocket.x = canvas.width; if (rocket.x > canvas.width) rocket.x = 0;
+
+            // Update environment
+            starfield.forEach(star => { star.brightness += star.twinkleSpeed * star.twinkleDirection; if (star.brightness >= 1.0) { star.brightness = 1.0; star.twinkleDirection = -1; } else if (star.brightness <= 0.2) { star.brightness = 0.2; star.twinkleDirection = 1; } });
+            for (let i = particles.length - 1; i >= 0; i--) { particles[i].update(); if (particles[i].life <= 0) { particles.splice(i, 1); } }
+
+            // HUD update and collision check
+            updateHUD(); const vMps = (rocket.vy * 10); const hMps = Math.abs(rocket.vx * 10); checkCollisions(vMps, hMps);
+        }
+
+        function updateHUD() {
+            const verticalMps = (rocket.vy * 10); const horizontalMps = Math.abs(rocket.vx * 10);
+            const altitudeFeet = Math.max(0, Math.floor((padY - rocket.y) * 4)); const angleDeg = Math.round(rocket.angle * (180 / Math.PI));
+            const fuelPercent = Math.max(0, Math.round((rocket.fuel / rocket.maxFuel) * 100));
+            hudAlt.innerText = `${altitudeFeet} m`;
+            
+            // Calcola il settore X istantaneo occupato dal LEM (0-9)
+            const currentLEMGridX = Math.min(9, Math.max(0, Math.floor(rocket.x / (canvas.width / 10))));
+            hudPosX.innerText = currentLEMGridX;
+            
+            hudVy.className = Math.abs(verticalMps) < activeSafeVy * 10 ? "text-emerald-400 font-bold" : "text-rose-500 font-bold";
+            hudVy.innerText = `${verticalMps.toFixed(1)} m/s`;
+            hudVx.className = horizontalMps < activeSafeVx * 10 ? "text-emerald-400 font-bold" : "text-rose-500 font-bold";
+            hudVx.innerText = `${horizontalMps.toFixed(1)} m/s`;
+            hudAngle.className = Math.abs(rocket.angle) < activeSafeAngle ? "text-emerald-400 font-bold" : "text-rose-500 font-bold";
+            hudAngle.innerText = `${angleDeg}°`;
+            hudFuelPct.innerText = `${fuelPercent}%`; hudFuelBar.style.width = `${fuelPercent}%`;
+            if (fuelPercent < 25) { hudFuelBar.className = "bg-rose-500 h-full transition-all duration-100"; hudFuelPct.className = "font-bold text-rose-500 animate-pulse"; } 
+            else { hudFuelBar.className = "bg-emerald-500 h-full transition-all duration-100"; hudFuelPct.className = "font-bold text-emerald-400"; }
+        }
+
+        // Check lunar terrain intersection mechanics
+        function checkCollisions(vMps, hMps) {
+            for (let i = 0; i < terrainPoints.length - 1; i++) {
+                const pt1 = terrainPoints[i]; const pt2 = terrainPoints[i + 1]; const checkX = rocket.x;
+                if (checkX >= pt1.x && checkX <= pt2.x) {
+                    const ratio = (checkX - pt1.x) / (pt2.x - pt1.x); const surfaceY = pt1.y + ratio * (pt2.y - pt1.y);
+                    if (rocket.y + rocket.height / 2 >= surfaceY) {
+                        stopThrusterSound(); const onPad = (rocket.x >= padXStart && rocket.x <= padXEnd);
+                        const safeSpeed = (Math.abs(vMps) <= activeSafeVy * 10); const safeHoriz = (hMps <= activeSafeVx * 10); const safeAngle = (Math.abs(rocket.angle) <= activeSafeAngle);
+                        if (onPad && safeSpeed && safeHoriz && safeAngle) { handleLanded(vMps, hMps); } else { handleCrash(onPad, safeSpeed, safeHoriz, safeAngle, vMps, hMps); }
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Gestione atterraggio riuscito
+        function handleLanded(vMps, hMps) {
+            gameStatus = 'LANDED'; playSound('success');
+            const durationFormatted = (elapsedTime / 1000).toFixed(1) + "s"; // Formato per la tabella delle statistiche
+
+            for (let i = 0; i < 50; i++) { particles.push(new Particle( rocket.x, rocket.y, (Math.random() - 0.5) * 8, (Math.random() - 0.5) * 8 - 2, `hsl(${Math.random() * 360}, 100%, 70%)`, Math.random() * 30 + 30, Math.random() * 4 + 1 )); }
+            
+            // Titolo colorato in base alla difficoltà
+            let titleColor = "text-emerald-400";
+            if (activeDifficulty === 'INTERMEDIO') titleColor = "text-sky-400";
+            if (activeDifficulty === 'DIFFICILE') titleColor = "text-rose-400";
+            
+            modalTitle.innerText = "SUCCESS MISSIONE: ALLUNAGGIO OK!"; 
+            modalTitle.className = `text-2xl font-black retro-font tracking-wider uppercase ${titleColor}`;
+            
+            modalDesc.innerText = `Katherine, la verifica del vettore spaziale della griglia [X:${targetGridX}, Y:${targetGridY}] era perfetta (Difficoltà: ${activeDifficulty}). John Glenn e l'equipaggio ringraziano!`;
+            modalGlow.style.backgroundColor = 'rgba(16, 185, 129, 0.2)';
+            modalIconContainer.innerHTML = ` <div class="bg-emerald-500/20 p-5 rounded-full border border-emerald-500/40 text-emerald-400 animate-bounce"> <i data-lucide="shield-check" class="w-12 h-12"></i> </div> `;
+            
+            const fuelPercent = Math.max(0, Math.round((rocket.fuel / rocket.maxFuel) * 100)); 
+            statSpeed.innerText = `${vMps.toFixed(1)} m/s`; 
+            statSpeed.className = "text-sm font-bold text-emerald-400"; 
+            statFuel.innerText = `${fuelPercent}%`; 
+            statFuel.className = "text-sm font-bold text-emerald-400";
+            
+            // Visualizzazione tempo impiegato
+            statTime.innerText = durationFormatted;
+            statTime.className = "text-sm font-bold text-yellow-400";
+
+            lucide.createIcons(); setTimeout(() => gameModal.classList.replace('hidden', 'flex'), 800);
+        }
+
+        // Gestione schianto
+        function handleCrash(onPad, safeSpeed, safeHoriz, safeAngle, vMps, hMps) {
+            gameStatus = 'CRASHED'; playSound('explosion');
+            const durationFormatted = (elapsedTime / 1000).toFixed(1) + "s";
+
+            for (let i = 0; i < 80; i++) { particles.push(new Particle( rocket.x, rocket.y, (Math.random() - 0.5) * 12, (Math.random() - 0.5) * 12 - 3, Math.random() > 0.4 ? '#ef4444' : '#f97316', Math.random() * 40 + 20, Math.random() * 6 + 2 )); }
+            modalTitle.innerText = "IMPATTO CATASTROFICO!"; modalTitle.className = "text-2xl font-black retro-font tracking-wider text-rose-500 uppercase";
+            let failReason = "";
+            if (!onPad) { failReason = `Sei finito fuori dal settore d'atterraggio previsto [X:${targetGridX}, Y:${targetGridY}].`; } 
+            else if (!safeSpeed) { failReason = `Velocità di discesa troppo elevata (${vMps.toFixed(1)} m/s). Katherine, i calcoli erano giusti ma il modulo si è spezzato nell'urto. (Limite Vy: ${activeSafeVy.toFixed(1)} m/s)`; } 
+            else if (!safeHoriz) { failReason = `Discesa orizzontale troppo rapida (${hMps.toFixed(1)} m/s). Il modulo è rotolato sui crateri. (Limite Vx: ${activeSafeVx.toFixed(1)} m/s)`; } 
+            else if (!safeAngle) { failReason = `L'Apollo 11 è atterrato troppo inclinato rovesciandosi sulla fiancata. (Limite: ${Math.round(activeSafeAngle * (180 / Math.PI))}°)`; }
+            modalDesc.innerText = `Schianto nel "${currentSectors[sectorIndex]}". ${failReason}`;
+            modalGlow.style.backgroundColor = 'rgba(239, 68, 68, 0.2)'; modalIconContainer.innerHTML = ` <div class="bg-rose-500/20 p-5 rounded-full border border-rose-500/40 text-rose-500"> <i data-lucide="skull" class="w-12 h-12"></i> </div> `;
+            
+            const fuelPercent = Math.max(0, Math.round((rocket.fuel / rocket.maxFuel) * 100)); 
+            statSpeed.innerText = `${vMps.toFixed(1)} m/s`; 
+            statSpeed.className = "text-sm font-bold text-rose-500"; 
+            statFuel.innerText = `${fuelPercent}%`; 
+            statFuel.className = fuelPercent < 25 ? "text-sm font-bold text-rose-500" : "text-sm font-bold text-slate-300";
+            
+            // Visualizzazione tempo registrato fino al crash
+            statTime.innerText = durationFormatted;
+            statTime.className = "text-sm font-bold text-slate-300";
+
+            lucide.createIcons(); setTimeout(() => gameModal.classList.replace('hidden', 'flex'), 1000);
+        }
+
+        // Draw HUD overlay, terrain and the retro space grid inside canvas
+        function draw() {
+            // Clean screen
+            ctx.fillStyle = '#020617'; ctx.fillRect(0, 0, canvas.width, canvas.height); 
+            
+            // Draw cosmic stars
+            starfield.forEach(star => { ctx.save(); ctx.globalAlpha = star.brightness; ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2); ctx.fill(); ctx.restore(); }); 
+
+            // Draw faint vector telemetry grid (0 to 9) on background
+            ctx.save();
+            ctx.strokeStyle = 'rgba(56, 189, 248, 0.08)'; 
+            ctx.lineWidth = 1;
+            ctx.font = '10px "Share Tech Mono", monospace';
+            ctx.fillStyle = 'rgba(56, 189, 248, 0.25)';
+            
+            const colW = canvas.width / 10;
+            const rowH = canvas.height / 10;
+            
+            // Draw columns (X: 0 to 9)
+            for (let i = 0; i < 10; i++) {
+                ctx.beginPath();
+                ctx.moveTo(i * colW, 0);
+                ctx.lineTo(i * colW, canvas.height);
+                ctx.stroke();
+                ctx.fillText(`X:${i}`, i * colW + 6, 15);
+            }
+            
+            // Draw rows (Y: 0 to 9)
+            for (let j = 0; j < 10; j++) {
+                ctx.beginPath();
+                ctx.moveTo(0, j * rowH);
+                ctx.lineTo(canvas.width, j * rowH);
+                ctx.stroke();
+                ctx.fillText(`Y:${j}`, 8, j * rowH + 15);
+            }
+            ctx.restore();
+
+            // Background hills details
+            ctx.fillStyle = '#0b0f19'; ctx.beginPath(); ctx.moveTo(0, canvas.height); for (let i = 0; i < terrainPoints.length; i++) { const py = canvas.height - (canvas.height - terrainPoints[i].y) * 0.4 - 50; ctx.lineTo(terrainPoints[i].x, py); } ctx.lineTo(canvas.width, canvas.height); ctx.closePath(); ctx.fill();
+            
+            // Draw thruster particles
+            particles.forEach(p => p.draw()); 
+            
+            // Draw main terrain line
+            ctx.strokeStyle = '#475569'; ctx.lineWidth = 3; ctx.fillStyle = '#090d16'; ctx.beginPath(); ctx.moveTo(0, canvas.height); for (let i = 0; i < terrainPoints.length; i++) { ctx.lineTo(terrainPoints[i].x, terrainPoints[i].y); } ctx.lineTo(canvas.width, canvas.height); ctx.closePath(); ctx.fill(); ctx.stroke(); 
+
+            // Draw landing pad
+            ctx.save(); ctx.strokeStyle = '#10b981'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(padXStart, padY); ctx.lineTo(padXEnd, padY); ctx.stroke();
+            const isFlash = Math.floor(Date.now() / 300) % 2 === 0; ctx.fillStyle = isFlash ? '#10b981' : '#047857'; ctx.beginPath(); ctx.arc(padXStart, padY - 2, 4, 0, Math.PI * 2); ctx.arc(padXEnd, padY - 2, 4, 0, Math.PI * 2); ctx.fill();
+            
+            // Scrittura difficoltà sotto il testo della zona sicura
+            ctx.fillStyle = '#34d399'; ctx.font = '10px "Share Tech Mono", monospace'; ctx.textAlign = 'center'; 
+            ctx.fillText(`SETTORE SICURO [${targetGridX}, ${targetGridY}]`, (padXStart + padXEnd) / 2, padY - 24);
+            
+            let padDiffText = `DIFFICOLTÀ: ${activeDifficulty}`;
+            ctx.fillStyle = activeDifficulty === 'FACILE' ? '#34d399' : (activeDifficulty === 'INTERMEDIO' ? '#38bdf8' : '#f43f5e');
+            ctx.fillText(padDiffText, (padXStart + padXEnd) / 2, padY - 10);
+            ctx.restore();
+
+            // Draw Lunar Module Rocket (if active)
+            if (gameStatus === 'PLAYING' || gameStatus === 'LANDED') {
+                ctx.save(); ctx.translate(rocket.x, rocket.y); ctx.rotate(rocket.angle);
+                ctx.lineWidth = 1.5; ctx.strokeStyle = '#d97706'; ctx.fillStyle = '#d97706'; // Base d'oro del modulo di discesa
+                // Zampe di atterraggio
+                ctx.beginPath(); ctx.moveTo(-6, 4); ctx.lineTo(-14, 16); ctx.lineTo(-18, 16); ctx.stroke(); ctx.fillRect(-20, 16, 5, 2);
+                ctx.beginPath(); ctx.moveTo(6, 4); ctx.lineTo(14, 16); ctx.lineTo(18, 16); ctx.stroke(); ctx.fillRect(15, 16, 5, 2);
+                ctx.beginPath(); ctx.moveTo(0, 4); ctx.lineTo(0, 15); ctx.stroke(); ctx.fillRect(-2.5, 15, 5, 1.5);
+                // Corpo ottagonale dorato
+                ctx.fillStyle = '#b45309'; ctx.strokeStyle = '#f59e0b'; ctx.beginPath(); ctx.moveTo(-8, -4); ctx.lineTo(8, -4); ctx.lineTo(10, 4); ctx.lineTo(-10, 4); ctx.closePath(); ctx.fill(); ctx.stroke();
+                // Cabina dell'equipaggio grigia
+                ctx.fillStyle = '#94a3b8'; ctx.strokeStyle = '#cbd5e1'; ctx.beginPath(); ctx.moveTo(-7, -4); ctx.lineTo(-7, -12); ctx.lineTo(-4, -16); ctx.lineTo(4, -16); ctx.lineTo(7, -12); ctx.lineTo(7, -4); fontStyle = 'normal'; ctx.closePath(); ctx.fill(); ctx.stroke();
+                ctx.fillStyle = '#38bdf8'; ctx.fillRect(-5, -12, 3, 3); ctx.fillRect(2, -12, 3, 3); // Finestrini azzurri
+                ctx.strokeStyle = '#e2e8f0'; ctx.beginPath(); ctx.moveTo(0, -16); ctx.lineTo(0, -22); ctx.stroke(); ctx.beginPath(); ctx.arc(0, -22, 2, 0, Math.PI, true); ctx.stroke(); // Antenna parabolica
+                ctx.fillStyle = '#475569'; ctx.fillRect(-3, 4, 6, 3); // Ugello del motore
+                ctx.restore();
+            }
+        }
+
+        // Gestione ridimensionamento dello schermo
+        function resizeCanvas() {
+            const containerWidth = canvas.parentElement.clientWidth; const containerHeight = canvas.parentElement.clientHeight;
+            canvas.width = containerWidth; canvas.height = Math.max(450, containerHeight); // Altezza dinamica
+            generateStars(); 
+            if (gameStatus === 'CALC_PHASE') {
+                generateTerrain(targetGridX, targetGridY);
+            }
+        }
+
+        // Input da tastiera
+        window.addEventListener('keydown', e => { keys[e.key] = true; if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) { e.preventDefault(); } });
+        window.addEventListener('keyup', e => { keys[e.key] = false; });
+
+        // Loop di rendering a 60fps
+        function loop() { update(); draw(); requestAnimationFrame(loop); }
+
+        // Start all'avvio
+        window.onload = function() {
+            window.addEventListener('resize', resizeCanvas); resizeCanvas(); setupTouchListeners();
+            lucide.createIcons();
+            
+            // Inizializza correttamente il livello prima di visualizzare (Mostrando la fase di calcoli iniziali)
+            resetLevel(true); 
+            
+            // Mostra la finestra informativa di benvenuto
+            infoModal.classList.replace('hidden', 'flex');
+            
+            loop(); // Avvia il loop
+        }
+    </script>
+</body>
+</html>
